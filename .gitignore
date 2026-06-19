@@ -1,0 +1,16 @@
+# Local artefacts
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Tooling caches
+.wrangler/
+node_modules/
+.vscode/
+.idea/
+
+# Secrets (ceinture-bretelles, on n'en a pas dans ce dossier mais au cas où)
+.env
+.env.*
+*.local
+wrangler-account.json
