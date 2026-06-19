@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvoiceForge – Générateur de Factures</title>
+    <style>
+        :root {
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --text: #1a1a2e;
+            --muted: #6b7280;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --border: #e5e7eb;
+            --danger: #ef4444;
+            --success: #10b981;
+            --radius: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,.08);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        .app { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 32px 20px 20px;
+        }
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header p { color: var(--muted); font-size: .95rem; margin-top: 4px; }
+        .badge {
+            display: inline-block;
+            background: #eef2ff;
+            color: var(--accent);
+            font-size: .75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-top: 8px;
+        }
+
+        /* Panels */
+        .panel {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+        }
+        .panel h3 {
+            font-size: .85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--muted);
+            margin-bottom: 16px;
+        }
+
+        /* Grid */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+        /* Form */
+        label {
+            display: block;
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: .9rem;
+            font-family: inherit;
+            transition: border .15s, box-shadow .15s;
+            background: #fafbfc;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+            background: #fff;
+        }
+        textarea { resize: vertical; min-height: 60px; }
+
+        /* Line items */
+        .line-item {
+            display: grid;
+            grid-template-columns: 3fr 1fr 1fr 1fr auto;
+            gap: 8px;
+            align-items: end;
+            margin-bottom: 10px;
+            padding: 12px;
+            background: #fafbfc;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            transition: border .15s;
+        }
+        .line-item:hover { border-color: var(--border); }
+        .line-item input {
+            padding: 8px 10px;
+            font-size: .85rem;
+        }
+        .btn-remove {
+            background: none;
+            border: 1.5px solid #fecaca;
+            color: var(--danger);
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all .15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-remove:hover { background: #fef2f2; border-color: var(--danger); }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: .9rem;
+            cursor: pointer;
+            border: none;
+            transition: all .15s;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+        .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,.3); }
+        .btn-secondary {
+            background: #fff;
+            color: var(--accent);
+            border: 1.5px solid var(--accent);
+        }
+        .btn-secondary:hover { background: #eef2ff; }
+        .btn-outline {
+            background: #fff;
+            color: var(--text);
+            border: 1.5px solid var(--border);
+        }
+        .btn-outline:hover { background: #f9fafb; }
+        .btn-sm { padding: 6px 14px; font-size: .8rem; }
+        .btn-block { width: 100%; justify-content: center; }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        /* Totals */
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: .9rem;
+        }
+        .total-row.grand {
+            font-weight: 700;
+            font-size: 1.15rem;
+            border-top: 2px solid var(--border);
+            margin-top: 8px;
+            padding-top: 12px;
+            color: var(--accent);
+        }
+
+        /* Preview Overlay */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.5);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 0;
+        }
+        .modal-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 1;
+            border-radius: 16px 16px 0 0;
+        }
+        .modal-header h2 { font-size: 1.1rem; }
+
+        /* Invoice Preview Doc */
+        .invoice-doc {
+            padding: 40px;
+            font-size: .9rem;
+            color: #1a1a2e;
+        }
+        .invoice-doc .doc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 32px;
+        }
+        .invoice-doc .doc-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1a1a2e;
+            letter-spacing: -0.5px;
+        }
+        .invoice-doc .doc-number {
+            font-size: .85rem;
+            color: #6b7280;
+        }
+        .invoice-doc .doc-meta {
+            text-align: right;
+            font-size: .85rem;
+            color: #6b7280;
+            line-height: 1.8;
+        }
+        .invoice-doc .doc-addresses {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 32px;
+        }
+        .invoice-doc .doc-addresses h4 {
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+        .invoice-doc table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+        }
+        .invoice-doc th {
+            text-align: left;
+            padding: 12px 8px;
+            border-bottom: 2px solid #e5e7eb;
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6b7280;
+        }
+        .invoice-doc td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .invoice-doc .text-right { text-align: right; }
+        .invoice-doc .doc-totals {
+            margin-left: auto;
+            width: 50%;
+        }
+        .invoice-doc .doc-totals .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: .9rem;
+        }
+        .invoice-doc .doc-totals .grand {
+            font-weight: 700;
+            font-size: 1.1rem;
+            border-top: 2px solid #1a1a2e;
+            margin-top: 6px;
+            padding-top: 10px;
+        }
+        .invoice-doc .doc-footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            color: #9ca3af;
+            font-size: .8rem;
+        }
+        .invoice-doc .doc-notes {
+            margin-top: 24px;
+            padding: 12px 16px;
+            background: #f9fafb;
+            border-radius: 8px;
+            font-size: .85rem;
+            color: #6b7280;
+        }
+
+        @media print {
+            body { background: #fff; }
+            .app { max-width: 100%; padding: 0; }
+            .panel:not(.print-panel), .header, .btn, .modal-header { display: none !important; }
+            .modal-overlay {
+                position: static;
+                background: none;
+                backdrop-filter: none;
+                padding: 0;
+            }
+            .modal { box-shadow: none; border-radius: 0; max-width: 100%; max-height: none; overflow: visible; }
+            .invoice-doc { padding: 0; }
+        }
+
+        @media (max-width: 640px) {
+            .grid, .grid-3 { grid-template-columns: 1fr; }
+            .line-item { grid-template-columns: 1fr 1fr; }
+            .line-item .desc-col { grid-column: 1 / -1; }
+            .invoice-doc .doc-addresses { grid-template-columns: 1fr; gap: 20px; }
+            .invoice-doc .doc-totals { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <!--
+        Note pour l'acheteur du template :
+        Ce badge est volontairement honnête : aucune limite n'est appliquée dans le code
+        (tout est traité côté navigateur, sans backend). Si tu veux proposer un vrai modèle
+        freemium (ex: 3 factures/mois), il faudra ajouter un compteur côté serveur ou un
+        système de compte utilisateur — ce template est conçu pour être 100% autonome.
+    -->
+    <div class="app">
+        <!-- Header -->
+        <div class="header">
+            <h1>⚡ InvoiceForge</h1>
+            <p>Générez des factures professionnelles en 2 minutes</p>
+            <span class="badge">100% Gratuit • Factures illimitées</span>
+        </div>
+
+        <!-- Émetteur -->
+        <div class="panel">
+            <h3>🏢 Vos informations</h3>
+            <div class="grid">
+                <div>
+                    <label>Nom / Entreprise</label>
+                    <input type="text" id="fromName" value="John Doe" placeholder="Votre nom ou entreprise">
+                </div>
+                <div>
+                    <label>Email</label>
+                    <input type="email" id="fromEmail" value="john@example.com" placeholder="contact@votre-entreprise.com">
+                </div>
+                <div>
+                    <label>Adresse</label>
+                    <input type="text" id="fromAddr" value="123 rue de Paris, 75001 Paris" placeholder="Votre adresse">
+                </div>
+                <div>
+                    <label>TVA / SIRET</label>
+                    <input type="text" id="fromVat" value="FR12345678901" placeholder="Numéro TVA ou SIRET">
+                </div>
+            </div>
+        </div>
+
+        <!-- Client -->
+        <div class="panel">
+            <h3>👤 Client</h3>
+            <div class="grid">
+                <div>
+                    <label>Nom / Entreprise</label>
+                    <input type="text" id="toName" value="Acme Corp" placeholder="Nom du client">
+                </div>
+                <div>
+                    <label>Email</label>
+                    <input type="email" id="toEmail" value="compta@acme.com" placeholder="Email du client">
+                </div>
+                <div>
+                    <label>Adresse</label>
+                    <input type="text" id="toAddr" value="456 avenue des Champs-Élysées" placeholder="Adresse du client">
+                </div>
+                <div>
+                    <label>TVA Client</label>
+                    <input type="text" id="toVat" value="FR98765432100" placeholder="TVA du client">
+                </div>
+            </div>
+        </div>
+
+        <!-- Détails -->
+        <div class="panel">
+            <h3>📋 Détails de la facture</h3>
+            <div class="grid-3">
+                <div>
+                    <label>N° Facture</label>
+                    <input type="text" id="invNumber" value="FAC-2026-0042">
+                </div>
+                <div>
+                    <label>Date d'émission</label>
+                    <input type="date" id="invDate">
+                </div>
+                <div>
+                    <label>Date d'échéance</label>
+                    <input type="date" id="dueDate">
+                </div>
+            </div>
+            <div style="margin-top:12px;">
+                <label>Devise</label>
+                <select id="currency">
+                    <option value="EUR" selected>EUR (€)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="CHF">CHF</option>
+                    <option value="CAD">CAD</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Lignes -->
+        <div class="panel">
+            <h3>📦 Prestations</h3>
+            <div id="lineItems">
+                <div class="line-item">
+                    <input type="text" class="desc-col" placeholder="Description" value="Développement site web">
+                    <input type="number" placeholder="Qté" value="1" min="1" step="1" class="qty">
+                    <input type="number" placeholder="Prix unitaire" value="1500" min="0" step="0.01" class="price">
+                    <input type="number" placeholder="TVA %" value="20" min="0" step="1" class="tax">
+                    <button class="btn-remove" title="Supprimer">×</button>
+                </div>
+                <div class="line-item">
+                    <input type="text" class="desc-col" placeholder="Description" value="Design UI/UX">
+                    <input type="number" placeholder="Qté" value="1" min="1" step="1" class="qty">
+                    <input type="number" placeholder="Prix unitaire" value="800" min="0" step="0.01" class="price">
+                    <input type="number" placeholder="TVA %" value="20" min="0" step="1" class="tax">
+                    <button class="btn-remove" title="Supprimer">×</button>
+                </div>
+            </div>
+            <div class="btn-group" style="margin-top:12px;">
+                <button class="btn btn-outline btn-sm" id="addLine">+ Ajouter une ligne</button>
+            </div>
+            <div style="margin-top:16px;">
+                <div class="total-row"><span>Sous-total HT</span><span id="subtotal">0,00 €</span></div>
+                <div class="total-row"><span>TVA</span><span id="taxTotal">0,00 €</span></div>
+                <div class="total-row grand"><span>Total TTC</span><span id="grandTotal">0,00 €</span></div>
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="panel">
+            <h3>💬 Notes & Conditions</h3>
+            <textarea id="notes" rows="3" placeholder="Conditions de paiement, IBAN, mentions légales...">Paiement sous 30 jours par virement bancaire.
+IBAN : FR76 1234 5678 9101 1213 1415
+Membre d'une association de gestion agréée – TVA acquittée sur les débits.</textarea>
+        </div>
+
+        <!-- Actions -->
+        <div class="btn-group" style="justify-content: center; padding: 8px 0 32px;">
+            <button class="btn btn-primary" id="previewBtn">👁️ Aperçu</button>
+            <button class="btn btn-secondary" id="downloadBtn">📥 Télécharger PDF</button>
+        </div>
+
+        <!-- PRO upsell -->
+        <div style="text-align:center; padding: 20px; background: linear-gradient(135deg, #eef2ff, #faf5ff); border-radius: var(--radius); margin-bottom:32px;">
+            <p style="font-weight:600; margin-bottom:6px;">🚀 Passez à InvoiceForge PRO</p>
+            <p style="font-size:.85rem;color:var(--muted);margin-bottom:10px;">Factures illimitées • Personnalisation logo/couleurs • Export PDF premium • Historique</p>
+            <span style="font-weight:700;font-size:1.2rem;color:var(--accent);">14€</span><span style="color:var(--muted);"> – achat unique</span>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="modal-overlay" id="modalOverlay" style="display:none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Aperçu de la facture</h2>
+                <div class="btn-group">
+                    <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Imprimer</button>
+                    <button class="btn btn-outline btn-sm" id="closePreview">✕ Fermer</button>
+                </div>
+            </div>
+            <div class="invoice-doc" id="invoicePreview"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        const currencySymbols = { EUR: '€', USD: '$', GBP: '£', CHF: 'CHF', CAD: 'CA$' };
+
+        function getCurrency() {
+            return document.getElementById('currency').value;
+        }
+
+        function calcTotals() {
+            let subtotal = 0, taxTotal = 0;
+            document.querySelectorAll('.line-item').forEach(row => {
+                const qty = parseFloat(row.querySelector('.qty').value) || 0;
+                const price = parseFloat(row.querySelector('.price').value) || 0;
+                const tax = parseFloat(row.querySelector('.tax').value) || 0;
+                const lineTotal = qty * price;
+                subtotal += lineTotal;
+                taxTotal += lineTotal * (tax / 100);
+            });
+            const sym = currencySymbols[getCurrency()] || '€';
+            document.getElementById('subtotal').textContent = subtotal.toFixed(2).replace('.', ',') + ' ' + sym;
+            document.getElementById('taxTotal').textContent = taxTotal.toFixed(2).replace('.', ',') + ' ' + sym;
+            document.getElementById('grandTotal').textContent = (subtotal + taxTotal).toFixed(2).replace('.', ',') + ' ' + sym;
+        }
+
+        function addLineItem(desc = '', qty = 1, price = 0, tax = 20) {
+            const div = document.createElement('div');
+            div.className = 'line-item';
+            div.innerHTML = `
+                <input type="text" class="desc-col" placeholder="Description" value="${desc}">
+                <input type="number" placeholder="Qté" value="${qty}" min="1" step="1" class="qty">
+                <input type="number" placeholder="Prix unitaire" value="${price}" min="0" step="0.01" class="price">
+                <input type="number" placeholder="TVA %" value="${tax}" min="0" step="1" class="tax">
+                <button class="btn-remove" title="Supprimer">×</button>
+            `;
+            div.querySelectorAll('input').forEach(inp => inp.addEventListener('input', calcTotals));
+            div.querySelector('.btn-remove').addEventListener('click', () => {
+                if (document.querySelectorAll('.line-item').length > 1) {
+                    div.remove();
+                    calcTotals();
+                }
+            });
+            document.getElementById('lineItems').appendChild(div);
+            calcTotals();
+        }
+
+        function buildInvoiceHTML() {
+            const sym = currencySymbols[getCurrency()] || '€';
+            const fromName = document.getElementById('fromName').value || 'Votre Entreprise';
+            const fromEmail = document.getElementById('fromEmail').value;
+            const fromAddr = document.getElementById('fromAddr').value;
+            const fromVat = document.getElementById('fromVat').value;
+            const toName = document.getElementById('toName').value || 'Client';
+            const toEmail = document.getElementById('toEmail').value;
+            const toAddr = document.getElementById('toAddr').value;
+            const toVat = document.getElementById('toVat').value;
+            const invNumber = document.getElementById('invNumber').value || 'FAC-0001';
+            const invDate = document.getElementById('invDate').value || new Date().toISOString().split('T')[0];
+            const dueDate = document.getElementById('dueDate').value || '';
+            const notes = document.getElementById('notes').value;
+
+            let rows = '';
+            let subtotal = 0, taxTotal = 0;
+            document.querySelectorAll('.line-item').forEach(row => {
+                const desc = row.querySelector('.desc-col').value || '—';
+                const qty = parseFloat(row.querySelector('.qty').value) || 0;
+                const price = parseFloat(row.querySelector('.price').value) || 0;
+                const tax = parseFloat(row.querySelector('.tax').value) || 0;
+                const lineTotal = qty * price;
+                const lineTax = lineTotal * (tax / 100);
+                subtotal += lineTotal;
+                taxTotal += lineTax;
+                rows += `<tr>
+                    <td>${escHtml(desc)}</td>
+                    <td class="text-right">${qty}</td>
+                    <td class="text-right">${price.toFixed(2).replace('.', ',')} ${sym}</td>
+                    <td class="text-right">${tax}%</td>
+                    <td class="text-right">${lineTotal.toFixed(2).replace('.', ',')} ${sym}</td>
+                </tr>`;
+            });
+            const grandTotal = subtotal + taxTotal;
+
+            return `
+                <div class="doc-header">
+                    <div>
+                        <div class="doc-title">FACTURE</div>
+                        <div class="doc-number">${escHtml(invNumber)}</div>
+                    </div>
+                    <div class="doc-meta">
+                        <div><strong>Date :</strong> ${formatDate(invDate)}</div>
+                        ${dueDate ? `<div><strong>Échéance :</strong> ${formatDate(dueDate)}</div>` : ''}
+                        <div><strong>Devise :</strong> ${getCurrency()}</div>
+                    </div>
+                </div>
+                <div class="doc-addresses">
+                    <div>
+                        <h4>Émetteur</h4>
+                        <strong>${escHtml(fromName)}</strong><br>
+                        ${escHtml(fromAddr)}<br>
+                        ${fromEmail ? escHtml(fromEmail) + '<br>' : ''}
+                        ${fromVat ? 'TVA : ' + escHtml(fromVat) : ''}
+                    </div>
+                    <div>
+                        <h4>Client</h4>
+                        <strong>${escHtml(toName)}</strong><br>
+                        ${escHtml(toAddr)}<br>
+                        ${toEmail ? escHtml(toEmail) + '<br>' : ''}
+                        ${toVat ? 'TVA : ' + escHtml(toVat) : ''}
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th class="text-right">Qté</th>
+                            <th class="text-right">Prix unitaire</th>
+                            <th class="text-right">TVA</th>
+                            <th class="text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <div class="doc-totals">
+                    <div class="row"><span>Sous-total HT</span><span>${subtotal.toFixed(2).replace('.', ',')} ${sym}</span></div>
+                    <div class="row"><span>TVA</span><span>${taxTotal.toFixed(2).replace('.', ',')} ${sym}</span></div>
+                    <div class="row grand"><span>Total TTC</span><span>${grandTotal.toFixed(2).replace('.', ',')} ${sym}</span></div>
+                </div>
+                ${notes ? `<div class="doc-notes"><strong>Notes :</strong><br>${escHtml(notes).replace(/\n/g, '<br>')}</div>` : ''}
+                <div class="doc-footer">
+                    InvoiceForge – Facture générée le ${new Date().toLocaleDateString('fr-FR')}
+                </div>
+            `;
+        }
+
+        function formatDate(d) {
+            if (!d) return '';
+            const [y, m, day] = d.split('-');
+            return `${day}/${m}/${y}`;
+        }
+        function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set dates
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('invDate').value = today;
+            const due = new Date();
+            due.setDate(due.getDate() + 30);
+            document.getElementById('dueDate').value = due.toISOString().split('T')[0];
+
+            // Bind inputs
+            document.querySelectorAll('.line-item input').forEach(inp => inp.addEventListener('input', calcTotals));
+            document.querySelectorAll('.line-item .btn-remove').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (document.querySelectorAll('.line-item').length > 1) {
+                        btn.closest('.line-item').remove();
+                        calcTotals();
+                    }
+                });
+            });
+
+            document.getElementById('addLine').addEventListener('click', () => addLineItem('', 1, 0, 20));
+            document.querySelectorAll('#fromName, #fromEmail, #fromAddr, #fromVat, #toName, #toEmail, #toAddr, #toVat, #invNumber, #invDate, #dueDate, #currency, #notes').forEach(el => {
+                el.addEventListener('input', calcTotals);
+                el.addEventListener('change', calcTotals);
+            });
+
+            // Preview
+            document.getElementById('previewBtn').addEventListener('click', () => {
+                document.getElementById('invoicePreview').innerHTML = buildInvoiceHTML();
+                document.getElementById('modalOverlay').style.display = 'flex';
+            });
+
+            // Close preview
+            document.getElementById('closePreview').addEventListener('click', () => {
+                document.getElementById('modalOverlay').style.display = 'none';
+            });
+            document.getElementById('modalOverlay').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('modalOverlay')) {
+                    document.getElementById('modalOverlay').style.display = 'none';
+                }
+            });
+
+            // Download PDF
+            document.getElementById('downloadBtn').addEventListener('click', () => {
+                const preview = document.getElementById('invoicePreview');
+                preview.innerHTML = buildInvoiceHTML();
+                const opt = {
+                    margin: 8,
+                    filename: `facture-${document.getElementById('invNumber').value || 'FAC'}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+                html2pdf().set(opt).from(preview).save();
+            });
+
+            calcTotals();
+        });
+    </script>
+</body>
+</html>

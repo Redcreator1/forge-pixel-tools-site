@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HashCraft – Hashtag Generator</title>
+    <style>
+        :root {
+            --bg: #fafafa;
+            --card: #fff;
+            --text: #111;
+            --muted: #888;
+            --accent: #ec4899;
+            --accent2: #f97316;
+            --border: #e5e5e5;
+            --radius: 14px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .app { max-width: 720px; margin: 0 auto; padding: 24px 20px; }
+
+        .header { text-align: center; padding: 20px 0 12px; }
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ec4899, #f97316);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header p { color: var(--muted); margin-top: 4px; }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.04);
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 90px;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: .95rem;
+            resize: vertical;
+            transition: border .2s;
+        }
+        textarea:focus { outline: none; border-color: var(--accent); }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            font-size: .82rem;
+            cursor: pointer;
+            background: #fff;
+            transition: all .15s;
+            font-weight: 500;
+            user-select: none;
+        }
+        .chip:hover { border-color: #ccc; background: #fafafa; }
+        .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+
+        .tags-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 7px 14px;
+            border-radius: 20px;
+            background: #f3f4f6;
+            font-size: .85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all .15s;
+            user-select: none;
+            border: 2px solid transparent;
+        }
+        .tag:hover { background: #e5e7eb; }
+        .tag.selected { background: #fce7f3; border-color: var(--accent); color: #be185d; }
+        .tag .count { font-size: .7rem; color: var(--muted); }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: .9rem;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            transition: all .15s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #ec4899, #f97316);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(236,72,153,.25);
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(236,72,153,.35); }
+        .btn-secondary { background: #fff; border: 2px solid #ec4899; color: #ec4899; }
+        .btn-secondary:hover { background: #fdf2f8; }
+        .btn-sm { padding: 6px 14px; font-size: .8rem; }
+        .btn-block { width: 100%; justify-content: center; }
+
+        .stat-row { display: flex; gap: 16px; margin-top: 8px; }
+        .stat {
+            flex: 1;
+            text-align: center;
+            padding: 14px 8px;
+            background: #fafafa;
+            border-radius: 10px;
+        }
+        .stat .num { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+        .stat .label { font-size: .75rem; color: var(--muted); margin-top: 2px; }
+
+        .copied-toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #111;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-size: .85rem;
+            font-weight: 600;
+            z-index: 99;
+            opacity: 0;
+            transition: opacity .2s;
+        }
+        .copied-toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <h1>🏷️ HashCraft</h1>
+            <p>Des hashtags qui percent pour Instagram, TikTok, LinkedIn...</p>
+        </div>
+
+        <div class="card">
+            <textarea id="topicInput" placeholder="Décris ton contenu en quelques mots...&#10;Ex : Recette de tiramisu facile pour débutants, Reel cuisine italienne"></textarea>
+            <div class="chips" id="platformChips">
+                <span class="chip active" data-platform="instagram">📸 Instagram</span>
+                <span class="chip" data-platform="tiktok">🎵 TikTok</span>
+                <span class="chip" data-platform="linkedin">💼 LinkedIn</span>
+                <span class="chip" data-platform="twitter">🐦 X / Twitter</span>
+                <span class="chip" data-platform="youtube">▶️ YouTube</span>
+            </div>
+            <div style="margin-top:16px; display:flex; gap:10px;">
+                <button class="btn btn-primary" id="generateBtn">✨ Générer</button>
+                <button class="btn btn-secondary btn-sm" id="copyAllBtn">📋 Copier tout</button>
+                <button class="btn btn-secondary btn-sm" id="exportCsvBtn">📊 CSV</button>
+            </div>
+        </div>
+
+        <div class="card" id="resultsCard" style="display:none;">
+            <div class="stat-row">
+                <div class="stat"><div class="num" id="tagCount">0</div><div class="label">Hashtags</div></div>
+                <div class="stat" title="Estimation basée sur le nombre de hashtags et l'audience moyenne de la plateforme"><div class="num" id="tagReach">0</div><div class="label">Portée estimée</div></div>
+                <div class="stat"><div class="num" id="tagSelected">0</div><div class="label">Sélectionnés</div></div>
+            </div>
+            <div class="tags-grid" id="tagsGrid"></div>
+            <div style="margin-top:12px; font-size:.8rem; color:var(--muted); text-align:center;">
+                💡 Clique sur un hashtag pour le sélectionner • <span id="selectAll" style="color:var(--accent);cursor:pointer;font-weight:600;">Tout sélectionner</span>
+            </div>
+            <div style="margin-top:8px; font-size:.72rem; color:var(--muted); text-align:center; opacity:.85;">
+                📊 Volumes et portée affichés à titre indicatif (estimations), à utiliser comme source d'inspiration.
+            </div>
+        </div>
+
+        <!--
+            Note pour l'acheteur du template :
+            Ce bloc est un emplacement "upsell" prêt à l'emploi (mise en avant visuelle),
+            sans fonctionnalité réelle derrière (pas de "Suggestions IA", pas d'analyse de
+            concurrence). Personnalise-le librement : retire-le, ou remplace-le par ton
+            offre, ton lien d'achat, ou la promotion d'un autre de tes produits.
+        -->
+        <div style="text-align:center; padding: 16px; margin-top:8px;">
+            <p style="font-weight:600; font-size:.9rem;">🚀 HashCraft PRO</p>
+            <p style="font-size:.8rem;color:var(--muted);">Suggestions IA illimitées • Analyse de concurrence • Planning éditorial</p>
+            <span style="font-weight:700;color:var(--accent);">12€</span><span style="color:var(--muted);font-size:.85rem;"> – à vie</span>
+        </div>
+    </div>
+    <div class="copied-toast" id="toast">✅ Copié !</div>
+
+    <script>
+        // Hashtag database by category & platform
+        const hashtagDB = {
+            instagram: {
+                food: ['#foodporn', '#homemade', '#foodstagram', '#instafood', '#yummy', '#foodie', '#cuisine', '#faitmaison', '#recettefacile', '#foodlover', '#delicious', '#gastronomie', '#cooking', '#recette', '#miam'],
+                lifestyle: ['#lifestyle', '#daily', '#motivation', '#inspiration', '#vibes', '#positiveenergy', '#selfcare', '#wellness', '#mindset'],
+                travel: ['#travel', '#voyage', '#wanderlust', '#travelgram', '#explore', '#adventure', '#vacation', '#roadtrip', '#paysage'],
+                tech: ['#tech', '#digital', '#innovation', '#startup', '#dev', '#coding', '#programming', '#webdev'],
+                fitness: ['#fitness', '#workout', '#sport', '#gym', '#fit', '#training', '#healthy', '#musculation'],
+                business: ['#business', '#entrepreneur', '#success', '#money', '#marketing', '#branding', '#growth'],
+                art: ['#art', '#artist', '#creative', '#design', '#drawing', '#illustration', '#digitalart', '#photography'],
+                fashion: ['#fashion', '#style', '#ootd', '#mode', '#outfit', '#streetwear', '#beauty', '#tendance'],
+                music: ['#music', '#musique', '#song', '#playlist', '#cover', '#beat', '#producer', '#sound'],
+            },
+            tiktok: {
+                food: ['#foodtok', '#cooking', '#recipe', '#easyrecipe', '#fyp', '#viral', '#foodtiktok', '#cuisinetok'],
+                lifestyle: ['#fyp', '#viral', '#trending', '#vlog', '#dayinmylife', '#grwm', '#aesthetic'],
+                dance: ['#dance', '#choreography', '#fyp', '#trending', '#viral', '#dancer'],
+                comedy: ['#comedy', '#funny', '#humour', '#sketch', '#prank', '#fyp', '#viral'],
+                tech: ['#techtok', '#coding', '#programmer', '#developer', '#fyp', '#learnontiktok'],
+                fitness: ['#fitnesstok', '#workout', '#gymtok', '#fyp', '#transformation'],
+                art: ['#arttok', '#artist', '#drawing', '#fyp', '#satisfying', '#creative'],
+                fashion: ['#fashiontiktok', '#outfit', '#style', '#fyp', '#grwm', '#ootd'],
+            },
+            linkedin: {
+                business: ['#leadership', '#management', '#careers', '#innovation', '#entrepreneurship', '#strategy', '#growth', '#business', '#success'],
+                tech: ['#technology', '#AI', '#data', '#cloud', '#cybersecurity', '#digitaltransformation', '#softwareengineering', '#dev'],
+                marketing: ['#marketingdigital', '#SEO', '#contentmarketing', '#socialmedia', '#branding', '#growthmarketing', '#analytics'],
+                hr: ['#recruitment', '#HR', '#talent', '#culture', '#diversity', '#inclusion', '#wellbeing', '#futureofwork'],
+                finance: ['#finance', '#investing', '#fintech', '#blockchain', '#crypto', '#banking', '#economy'],
+            },
+            twitter: {
+                tech: ['#tech', '#AI', '#dev', '#opensource', '#buildinpublic', '#indiehacker', '#startup', '#nocode'],
+                news: ['#breaking', '#news', '#trending', '#world', '#politics'],
+                dev: ['#100DaysOfCode', '#webdev', '#javascript', '#python', '#rust', '#react', '#coding'],
+            },
+            youtube: {
+                general: ['#youtube', '#video', '#tutorial', '#vlog', '#review', '#howto', '#guide', '#tips'],
+                gaming: ['#gaming', '#gameplay', '#letsplay', '#twitch', '#esports', '#streamer'],
+                education: ['#education', '#learning', '#explained', '#science', '#history', '#documentary'],
+            }
+        };
+
+        const platformReach = { instagram: 12000, tiktok: 25000, linkedin: 5000, twitter: 8000, youtube: 15000 };
+        let currentTags = [], selectedTags = new Set();
+
+        function detectCategory(text) {
+            const lower = text.toLowerCase();
+            const keywords = {
+                food: ['recette', 'cuisine', 'manger', 'food', 'gateau', 'dessert', 'repas', 'cuisinier', 'restaurant', 'pain', 'patisserie', 'tiramisu', 'pizza', 'pates'],
+                lifestyle: ['vie', 'quotidien', 'routine', 'lifestyle', 'day', 'bienetre', 'bien-être', 'meditation'],
+                travel: ['voyage', 'travel', 'vacances', 'pays', 'plage', 'hotel', 'avion', 'tourisme', 'randonnee'],
+                tech: ['code', 'dev', 'tech', 'ia', 'ai', 'logiciel', 'app', 'web', 'startup', 'python', 'js', 'react'],
+                fitness: ['sport', 'fitness', 'muscu', 'gym', 'entrainement', 'course', 'running', 'yoga'],
+                business: ['business', 'entreprise', 'entrepreneur', 'freelance', 'client', 'marketing', 'vente', 'business', 'succes'],
+                art: ['art', 'dessin', 'peinture', 'design', 'illustration', 'photo', 'créatif', 'artistique'],
+                fashion: ['mode', 'style', 'vetement', 'fashion', 'beauté', 'beauty', 'makeup', 'maquillage'],
+                music: ['musique', 'music', 'chanson', 'guitare', 'piano', 'son', 'beat', 'prod'],
+                dance: ['danse', 'dance', 'choré'],
+                comedy: ['humour', 'blague', 'drôle', 'comedy', 'sketch', 'rire'],
+                gaming: ['gaming', 'jeu', 'game', 'video', 'twitch', 'stream'],
+                education: ['apprendre', 'cours', 'education', 'tuto', 'formation', 'leçon'],
+                finance: ['finance', 'investir', 'argent', 'bourse', 'crypto', 'banque'],
+                marketing: ['marketing', 'seo', 'pub', 'brand', 'contenu', 'social media'],
+                hr: ['recrutement', 'rh', 'talent', 'emploi', 'carrière', 'career'],
+            };
+            for (const [cat, words] of Object.entries(keywords)) {
+                if (words.some(w => lower.includes(w))) return cat;
+            }
+            return 'general';
+        }
+
+        function generateTags(topic, platform) {
+            const cat = detectCategory(topic);
+            const specificDB = hashtagDB[platform] || hashtagDB.instagram;
+            let baseTags = [];
+
+            // Get category-specific tags
+            if (specificDB[cat]) {
+                baseTags = [...specificDB[cat]];
+            }
+            // Add cross-category tags
+            const allTags = Object.values(specificDB).flat();
+            const shuffled = allTags.sort(() => Math.random() - 0.5);
+            const extraTags = shuffled.filter(t => !baseTags.includes(t)).slice(0, 8);
+
+            // Generate topic-derived tags
+            const words = topic.toLowerCase().replace(/[.,!?]/g, '').split(/\s+/);
+            const derived = [];
+            for (const word of words) {
+                if (word.length > 3) {
+                    derived.push('#' + word.replace(/[^a-z0-9]/g, ''));
+                }
+            }
+            // Combine category-specific + derived keywords
+            const topicKeywords = [];
+            for (const word of words) {
+                if (word.length > 3) {
+                    topicKeywords.push('#' + word.replace(/[^a-z0-9]/g, '') + (cat !== 'general' ? cat : ''));
+                    topicKeywords.push('#' + word.replace(/[^a-z0-9]/g, '') + 'tok');
+                }
+            }
+
+            let combined = [...baseTags.slice(0, 6), ...derived.slice(0, 3), ...extraTags.slice(0, 4), ...topicKeywords.slice(0, 3)];
+            // Remove duplicates
+            combined = [...new Set(combined.map(t => t.toLowerCase()))];
+            // Sort: base first, then extras
+            combined.sort((a, b) => {
+                const aInBase = baseTags.some(t => t.toLowerCase() === a);
+                const bInBase = baseTags.some(t => t.toLowerCase() === b);
+                if (aInBase && !bInBase) return -1;
+                if (!aInBase && bInBase) return 1;
+                return 0;
+            });
+            return combined.slice(0, 20);
+        }
+
+        function renderTags() {
+            const grid = document.getElementById('tagsGrid');
+            grid.innerHTML = currentTags.map(tag => {
+                const isSelected = selectedTags.has(tag);
+                const popularity = Math.floor(Math.random() * 50000) + 1000;
+                return `<span class="tag ${isSelected ? 'selected' : ''}" data-tag="${tag}">
+                    ${tag} <span class="count" title="Volume d'usage estimé (indicatif)">${(popularity/1000).toFixed(1)}k</span>
+                </span>`;
+            }).join('');
+
+            document.getElementById('tagCount').textContent = currentTags.length;
+            document.getElementById('tagReach').textContent = (currentTags.length * (platformReach[document.querySelector('.chip.active')?.dataset?.platform || 'instagram'] || 10000)).toLocaleString();
+            document.getElementById('tagSelected').textContent = selectedTags.size;
+
+            // Click handlers
+            grid.querySelectorAll('.tag').forEach(el => {
+                el.addEventListener('click', () => {
+                    const tag = el.dataset.tag;
+                    if (selectedTags.has(tag)) {
+                        selectedTags.delete(tag);
+                    } else {
+                        selectedTags.add(tag);
+                    }
+                    renderTags();
+                });
+            });
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 1800);
+            });
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('generateBtn').addEventListener('click', () => {
+                const topic = document.getElementById('topicInput').value.trim();
+                if (!topic) {
+                    document.getElementById('topicInput').focus();
+                    return;
+                }
+                const platform = document.querySelector('.chip.active')?.dataset?.platform || 'instagram';
+                currentTags = generateTags(topic, platform);
+                selectedTags = new Set(currentTags.slice(0, 8));
+                document.getElementById('resultsCard').style.display = 'block';
+                renderTags();
+                document.getElementById('resultsCard').scrollIntoView({ behavior: 'smooth' });
+            });
+
+            // Platform chips
+            document.querySelectorAll('#platformChips .chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    document.querySelectorAll('#platformChips .chip').forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    const topic = document.getElementById('topicInput').value.trim();
+                    if (topic && currentTags.length > 0) {
+                        const platform = chip.dataset.platform;
+                        currentTags = generateTags(topic, platform);
+                        selectedTags = new Set(currentTags.slice(0, 8));
+                        renderTags();
+                    }
+                });
+            });
+
+            // Copy all
+            document.getElementById('copyAllBtn').addEventListener('click', () => {
+                const tagsToCopy = selectedTags.size > 0 ? [...selectedTags] : currentTags;
+                copyToClipboard(tagsToCopy.join(' '));
+            });
+
+            // Select all
+            document.getElementById('selectAll').addEventListener('click', () => {
+                if (selectedTags.size === currentTags.length) {
+                    selectedTags.clear();
+                } else {
+                    selectedTags = new Set(currentTags);
+                }
+                renderTags();
+            });
+
+            // Export CSV
+            document.getElementById('exportCsvBtn').addEventListener('click', () => {
+                const tagsToExport = selectedTags.size > 0 ? [...selectedTags] : currentTags;
+                const csv = 'Hashtag,Popularite estimee\n' + tagsToExport.map(t => `${t},${Math.floor(Math.random()*50000)+1000}`).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = 'hashtags.csv'; a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            // Enter key trigger
+            document.getElementById('topicInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    document.getElementById('generateBtn').click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

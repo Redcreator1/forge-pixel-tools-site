@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forge &amp; Pixel Tools — Outils web prêts à déployer</title>
+<meta name="description" content="HashCraft, InvoiceForge et QR Pixel : trois mini-outils web complets, code source inclus, prêts à déployer en quelques minutes.">
+
+<!-- Mode early access : code open source MIT sur GitHub (Redcreator1/forge-pixel-tools), gratuit pour le moment. Paiement à intégrer plus tard. -->
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #15120f;
+    --surface: #221d19;
+    --surface-2: #2c2620;
+    --border: #3a332c;
+    --text: #f5efe7;
+    --text-muted: #aa9d8e;
+    --ember: #ff7a45;
+    --ember-dim: #5a3322;
+    --pixel: #5eead4;
+    --pixel-dim: #1d3a35;
+    --radius-lg: 20px;
+    --radius-md: 12px;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  img, svg { display: block; max-width: 100%; }
+  a { color: inherit; }
+  :focus-visible {
+    outline: 2px solid var(--pixel);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  .wrap {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ============ HERO ============ */
+  .hero {
+    position: relative;
+    padding: 96px 24px 80px;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(94,234,212,0.16) 1.5px, transparent 1.5px);
+    background-size: 28px 28px;
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0));
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0));
+    pointer-events: none;
+  }
+  .hero-inner {
+    position: relative;
+    max-width: 760px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--pixel);
+    margin: 0 0 18px;
+  }
+  .wordmark {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.6rem, 7vw, 4.6rem);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+  }
+  .wordmark .forge { color: var(--ember); }
+  .wordmark .amp {
+    display: inline-block;
+    margin: 0 0.08em;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+  .wordmark .pixel {
+    font-family: var(--font-mono);
+    color: var(--pixel);
+    letter-spacing: 0.04em;
+  }
+  .wordmark .toolsword {
+    display: block;
+    font-size: 0.42em;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    margin-top: 14px;
+  }
+  .tagline {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    max-width: 540px;
+    margin: 28px auto 36px;
+  }
+  .tagline strong { color: var(--text); font-weight: 600; }
+
+  .hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text);
+    text-decoration: none;
+    padding: 12px 22px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    transition: border-color .15s, color .15s;
+  }
+  .hero-cta:hover { border-color: var(--pixel); color: var(--pixel); }
+
+  /* ============ TOOLS GRID ============ */
+  .tools {
+    padding: 88px 24px;
+  }
+  .section-head {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto 56px;
+  }
+  .section-head h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+    margin: 10px 0 12px;
+  }
+  .section-head p { color: var(--text-muted); margin: 0; }
+
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+  }
+
+  .tool-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    transition: transform .2s ease, border-color .2s ease;
+  }
+  .tool-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--acc1);
+  }
+
+  /* --- mini mockups --- */
+  .tool-mock {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    margin-bottom: 18px;
+    height: 132px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .mock-dots { display: flex; gap: 5px; margin-bottom: 4px; }
+  .mock-dots span {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--border);
+  }
+
+  /* HashCraft mock */
+  .mock-search {
+    height: 22px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+  }
+  .mock-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .mock-pills span {
+    height: 16px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--acc1), var(--acc2));
+    opacity: .85;
+  }
+  .mock-pills span:nth-child(1) { width: 46px; }
+  .mock-pills span:nth-child(2) { width: 64px; opacity: .55;}
+  .mock-pills span:nth-child(3) { width: 38px; opacity: .7;}
+  .mock-pills span:nth-child(4) { width: 56px; opacity: .4;}
+  .mock-pills span:nth-child(5) { width: 30px; opacity: .65;}
+
+  /* InvoiceForge mock */
+  .mock-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mock-fields div { height: 18px; border-radius: 6px; border: 1.5px solid var(--border); }
+  .mock-rows { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .mock-rows div {
+    height: 12px; border-radius: 4px;
+    background: var(--surface-2);
+  }
+  .mock-rows div:last-child {
+    align-self: flex-end;
+    width: 40%;
+    background: linear-gradient(135deg, var(--acc1), var(--acc2));
+    opacity: .8;
+  }
+
+  /* QR Pixel mock */
+  .mock-qr-row { display: flex; gap: 14px; align-items: center; flex: 1; }
+  .mock-qr-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    gap: 2px;
+    width: 78px; height: 78px;
+    flex-shrink: 0;
+  }
+  .mock-qr-grid span { border-radius: 1px; background: var(--surface-2); }
+  .mock-qr-grid span.on { background: linear-gradient(135deg, var(--acc1), var(--acc2)); }
+  .mock-qr-side { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .mock-qr-side .swatch { display: flex; gap: 6px; }
+  .mock-qr-side .swatch span {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 1.5px solid var(--border);
+  }
+  .mock-qr-side .swatch span:nth-child(1) { background: var(--acc1); }
+  .mock-qr-side .swatch span:nth-child(2) { background: var(--acc2); }
+  .mock-qr-side .swatch span:nth-child(3) { background: transparent; }
+  .mock-qr-side .bar { height: 18px; border-radius: 6px; border: 1.5px solid var(--border); }
+
+  /* --- card content --- */
+  .tool-spec {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--acc1);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 5px 10px;
+    display: inline-block;
+    margin-bottom: 14px;
+    align-self: flex-start;
+  }
+  .tool-card h3 {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    margin: 0 0 8px;
+  }
+  .tool-desc {
+    color: var(--text-muted);
+    margin: 0 0 16px;
+    font-size: 0.95rem;
+  }
+  .tool-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 22px;
+    font-size: 0.88rem;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-grow: 1;
+  }
+  .tool-features li { padding-left: 18px; position: relative; }
+  .tool-features li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0.55em;
+    width: 8px; height: 2px;
+    background: var(--acc1);
+  }
+
+  .tool-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .price {
+    font-family: var(--font-mono);
+    font-size: 1.3rem;
+    font-weight: 600;
+  }
+  .btn-group { display: flex; gap: 8px; }
+  .btn {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-decoration: none;
+    padding: 9px 16px;
+    border-radius: 999px;
+    transition: opacity .15s, transform .15s;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-ghost {
+    border-color: var(--border);
+    color: var(--text);
+  }
+  .btn-ghost:hover { border-color: var(--acc1); color: var(--acc1); }
+  .btn-buy {
+    background: var(--acc1);
+    color: #161310;
+  }
+  .btn-buy:hover { opacity: .9; }
+  .btn-github {
+    background: var(--text);
+    color: var(--bg);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-github:hover { opacity: .85; }
+  .btn-github svg { width: 14px; height: 14px; fill: currentColor; }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--pixel);
+    background: var(--pixel-dim);
+    border: 1px solid rgba(94, 234, 212, 0.3);
+    padding: 6px 14px;
+    border-radius: 999px;
+    margin-bottom: 22px;
+  }
+  .hero-badge .dot {
+    width: 6px; height: 6px;
+    background: var(--pixel);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--pixel);
+  }
+
+  .price-was {
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    text-decoration: line-through;
+    font-size: 0.95rem;
+    margin-right: 6px;
+  }
+  .price-free {
+    font-family: var(--font-mono);
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--pixel);
+  }
+
+  /* per-card accents */
+  .tool-card--hashcraft   { --acc1: #ec4899; --acc2: #f97316; }
+  .tool-card--invoiceforge{ --acc1: #6366f1; --acc2: #8b5cf6; }
+  .tool-card--qrpixel     { --acc1: #6366f1; --acc2: #10b981; }
+
+  /* ============ PACK BANNER ============ */
+  .pack {
+    padding: 0 24px 96px;
+  }
+  .pack-inner {
+    max-width: 1140px;
+    margin: 0 auto;
+    background: linear-gradient(120deg, var(--ember-dim), var(--pixel-dim));
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 40px;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 32px;
+    align-items: center;
+  }
+  .pack-text .eyebrow { color: var(--ember); }
+  .pack-text h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 3.5vw, 2rem);
+    margin: 6px 0 10px;
+  }
+  .pack-text p { color: var(--text); margin: 0; max-width: 440px; }
+  .pack-price {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .price-row { display: flex; align-items: baseline; gap: 10px; }
+  .price-old {
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    text-decoration: line-through;
+    font-size: 1rem;
+  }
+  .price-new {
+    font-family: var(--font-mono);
+    font-size: 2.2rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .pack-save {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--pixel);
+    margin: 0;
+  }
+  .btn-large {
+    font-size: 0.95rem;
+    padding: 14px 28px;
+    background: var(--text);
+    color: var(--bg);
+  }
+  .btn-large:hover { opacity: .9; }
+
+  /* ============ FOOTER ============ */
+  .site-footer {
+    border-top: 1px solid var(--border);
+    padding: 48px 24px;
+  }
+  .footer-inner {
+    max-width: 1140px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .footer-brand {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+  .footer-brand .pixel { color: var(--pixel); font-family: var(--font-mono); }
+  .footer-note {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    max-width: 480px;
+    margin: 10px 0 0;
+  }
+  .footer-social {
+    display: flex;
+    gap: 14px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+  }
+  .footer-social a { text-decoration: none; color: var(--text-muted); transition: color .15s; }
+  .footer-social a:hover { color: var(--pixel); }
+  .footer-credit {
+    width: 100%;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    margin-top: 24px;
+    font-family: var(--font-mono);
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 880px) {
+    .tool-grid { grid-template-columns: 1fr; }
+    .pack-inner { grid-template-columns: 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .tool-card, .btn { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <span class="hero-badge"><span class="dot"></span>Open source · Gratuit pour le moment</span>
+      <h1 class="wordmark">
+        <span class="forge">Forge</span><span class="amp">&amp;</span><span class="pixel">Pixel</span>
+        <span class="toolsword">Tools</span>
+      </h1>
+      <p class="tagline">
+        Trois mini-outils web complets, prêts à l'emploi.
+        <strong>Code source en main, en ligne en 2 minutes.</strong>
+        <br>Clone, déploie, customise — ces outils sont à toi.
+      </p>
+      <a href="#tools" class="hero-cta">Voir les outils ↓</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="tools" id="tools">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">// le catalogue</p>
+          <h2>Trois outils, zéro friction</h2>
+          <p>HTML / CSS / JS — un seul fichier par outil, aucune compilation, déploiement immédiat.</p>
+        </div>
+
+        <div class="tool-grid">
+
+          <!-- HashCraft -->
+          <article class="tool-card tool-card--hashcraft">
+            <div class="tool-mock">
+              <div class="mock-dots"><span></span><span></span><span></span></div>
+              <div class="mock-search"></div>
+              <div class="mock-pills">
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+            <span class="tool-spec">réf hc-01 · 1 fichier · sans dépendance</span>
+            <h3>HashCraft</h3>
+            <p class="tool-desc">Trouve les hashtags qui marchent, par plateforme.</p>
+            <ul class="tool-features">
+              <li>5 plateformes : Instagram, TikTok, LinkedIn, X, YouTube</li>
+              <li>Détection automatique du sujet du contenu</li>
+              <li>Export CSV et copie en un clic</li>
+            </ul>
+            <div class="tool-actions">
+              <span class="price-free">Gratuit <span class="price-was">9 €</span></span>
+              <div class="btn-group">
+                <a href="/hashcraft/" class="btn btn-ghost">Essayer</a>
+                <a href="https://github.com/Redcreator1/forge-pixel-tools/tree/main/hashcraft" class="btn btn-github" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2.16c-3.2.69-3.87-1.36-3.87-1.36-.52-1.33-1.27-1.68-1.27-1.68-1.04-.71.08-.69.08-.69 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.68 1.25 3.34.96.1-.74.4-1.25.72-1.54-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.47.11-3.06 0 0 .96-.31 3.15 1.18a10.92 10.92 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.77.11 3.06.74.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.41-5.26 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>GitHub</a>
+              </div>
+            </div>
+          </article>
+
+          <!-- InvoiceForge -->
+          <article class="tool-card tool-card--invoiceforge">
+            <div class="tool-mock">
+              <div class="mock-dots"><span></span><span></span><span></span></div>
+              <div class="mock-fields"><div></div><div></div></div>
+              <div class="mock-rows"><div></div><div></div><div></div></div>
+            </div>
+            <span class="tool-spec">réf if-02 · 1 fichier · export pdf</span>
+            <h3>InvoiceForge</h3>
+            <p class="tool-desc">Crée une facture pro et télécharge le PDF en 2 minutes.</p>
+            <ul class="tool-features">
+              <li>Multi-devises : EUR, USD, GBP, CHF, CAD</li>
+              <li>Calcul automatique des sous-totaux et de la TVA</li>
+              <li>Aperçu live + export PDF en un clic</li>
+            </ul>
+            <div class="tool-actions">
+              <span class="price-free">Gratuit <span class="price-was">15 €</span></span>
+              <div class="btn-group">
+                <a href="/invoiceforge/" class="btn btn-ghost">Essayer</a>
+                <a href="https://github.com/Redcreator1/forge-pixel-tools/tree/main/invoiceforge" class="btn btn-github" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2.16c-3.2.69-3.87-1.36-3.87-1.36-.52-1.33-1.27-1.68-1.27-1.68-1.04-.71.08-.69.08-.69 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.68 1.25 3.34.96.1-.74.4-1.25.72-1.54-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.47.11-3.06 0 0 .96-.31 3.15 1.18a10.92 10.92 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.77.11 3.06.74.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.41-5.26 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>GitHub</a>
+              </div>
+            </div>
+          </article>
+
+          <!-- QR Pixel -->
+          <article class="tool-card tool-card--qrpixel">
+            <div class="tool-mock">
+              <div class="mock-dots"><span></span><span></span><span></span></div>
+              <div class="mock-qr-row">
+                <div class="mock-qr-grid">
+                  <span class="on"></span><span class="on"></span><span class="on"></span><span></span><span class="on"></span><span class="on"></span>
+                  <span class="on"></span><span></span><span class="on"></span><span></span><span></span><span class="on"></span>
+                  <span class="on"></span><span class="on"></span><span class="on"></span><span></span><span class="on"></span><span></span>
+                  <span></span><span></span><span></span><span class="on"></span><span></span><span class="on"></span>
+                  <span class="on"></span><span></span><span class="on"></span><span></span><span class="on"></span><span class="on"></span>
+                  <span class="on"></span><span class="on"></span><span></span><span class="on"></span><span></span><span class="on"></span>
+                </div>
+                <div class="mock-qr-side">
+                  <div class="swatch"><span></span><span></span><span></span></div>
+                  <div class="bar"></div>
+                  <div class="bar"></div>
+                </div>
+              </div>
+            </div>
+            <span class="tool-spec">réf qp-03 · 1 fichier · 100% local</span>
+            <h3>QR Pixel</h3>
+            <p class="tool-desc">Génère des QR codes personnalisés, 100% hors-ligne.</p>
+            <ul class="tool-features">
+              <li>6 types : URL, texte, email, tel, WiFi, vCard</li>
+              <li>Couleurs, formes et taille personnalisables</li>
+              <li>Export PNG + SVG, aucune donnée envoyée à un serveur</li>
+            </ul>
+            <div class="tool-actions">
+              <span class="price-free">Gratuit <span class="price-was">12 €</span></span>
+              <div class="btn-group">
+                <a href="/qrpixel/" class="btn btn-ghost">Essayer</a>
+                <a href="https://github.com/Redcreator1/forge-pixel-tools/tree/main/qrpixel" class="btn btn-github" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2.16c-3.2.69-3.87-1.36-3.87-1.36-.52-1.33-1.27-1.68-1.27-1.68-1.04-.71.08-.69.08-.69 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.68 1.25 3.34.96.1-.74.4-1.25.72-1.54-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.47.11-3.06 0 0 .96-.31 3.15 1.18a10.92 10.92 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.77.11 3.06.74.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.41-5.26 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>GitHub</a>
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <section class="pack">
+      <div class="pack-inner">
+        <div class="pack-text">
+          <p class="eyebrow">// open source · early access</p>
+          <h2>Les 3 outils, code source complet</h2>
+          <p>HashCraft + InvoiceForge + QR Pixel — code MIT, README et démos live. Clone le repo, customise, déploie. <strong>Profite-en avant que ça change.</strong></p>
+        </div>
+        <div class="pack-price">
+          <div class="price-row">
+            <span class="price-old">36 €</span>
+            <span class="price-new">Gratuit</span>
+          </div>
+          <p class="pack-save">— pour le moment</p>
+          <a href="https://github.com/Redcreator1/forge-pixel-tools" class="btn btn-large btn-github" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;fill:currentColor;"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2.16c-3.2.69-3.87-1.36-3.87-1.36-.52-1.33-1.27-1.68-1.27-1.68-1.04-.71.08-.69.08-.69 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.68 1.25 3.34.96.1-.74.4-1.25.72-1.54-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.47.11-3.06 0 0 .96-.31 3.15 1.18a10.92 10.92 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.77.11 3.06.74.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.41-5.26 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>Cloner le repo complet</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        <p class="footer-brand">Forge <span class="pixel">&amp;</span> Pixel Tools</p>
+        <p class="footer-note">
+          Code open source sous licence MIT. Usage personnel, commercial, fork, modification — tout est permis. Mention de copyright à conserver.
+        </p>
+      </div>
+      <nav class="footer-social" aria-label="Liens">
+        <a href="https://github.com/Redcreator1/forge-pixel-tools" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <p class="footer-credit">© 2026 Forge &amp; Pixel Tools — MIT License</p>
+    </div>
+  </footer>
+
+</body>
+</html>
